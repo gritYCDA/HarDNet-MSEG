@@ -9,6 +9,7 @@ from utils.utils import clip_gradient, adjust_lr, AvgMeter
 import torch.nn.functional as F
 import numpy as np
 from torchstat import stat
+import pprint
 
 
 def structure_loss(pred, mask):
@@ -26,10 +27,10 @@ def structure_loss(pred, mask):
 
 
 
-def test(model, path):
+def test(model, test_path):
     
     ##### put ur data_path of TestDataSet/Kvasir here #####
-    data_path = path
+    data_path = test_path
     #####                                             #####
     
     model.eval()
@@ -149,19 +150,42 @@ if __name__ == '__main__':
                         default=50, help='every n epochs decay learning rate')
     
     parser.add_argument('--train_path', type=str,
-                        default='/work/james128333/PraNet/TrainDataset', help='path to train dataset')
+                        default='/data1/medical/TrainDataset', help='path to train dataset')
     
     parser.add_argument('--test_path', type=str,
-                        default='/work/james128333/PraNet/TestDataset/Kvasir' , help='path to testing Kvasir dataset')
+                        default='/data1/medical/TestDataset/Kvasir' , help='path to testing Kvasir dataset')
     
     parser.add_argument('--train_save', type=str,
                         default='HarD-MSEG-best')
+
+    parser.add_argument('--num_workers', type=int,
+                        default=4, help='number of workers for data loader')
+
+    parser.add_argument('--hardnet', type=int,
+                        default=68, help='[HarDNet68 - 68 , HarDNet85 - 85, HarDNet65DS, HarDNet95DS]')
+
+    parser.add_argument('--datasets', type=str,
+                        default='kvasir', help='[kvasir, five]')
     
     opt = parser.parse_args()
 
+    if opt.datasets == 'kvasir':
+        opt.lr = 1e-2
+        opt.optimizer = 'SGD'
+        opt.augmentation = True
+        opt.trainsize = 512
+        opt.train_path = '/data1/medical/kvasir/Kvasir_SEG_Training_880'
+        opt.test_path = '/data1/medical/kvasir/Kvasir_SEG_Validation_120'
+
+    print('##'*20+'   Configurations   '+'##'*20)
+    pprint.pprint(vars(opt))
+
     # ---- build models ----
     # torch.cuda.set_device(0)  # set your gpu device
-    model = HarDMSEG().cuda()
+
+    # We support two kind of backbone
+    assert opt.hardnet in [68, 85], "We support two kind of backbone [HarDNet68, HarDNet85]"
+    model = HarDMSEG(arch=opt.hardnet).cuda()
 
     # ---- flops and params ----
     # from utils.utils import CalParams
@@ -178,8 +202,9 @@ if __name__ == '__main__':
     print(optimizer)
     image_root = '{}/images/'.format(opt.train_path)
     gt_root = '{}/masks/'.format(opt.train_path)
+    print("Dataset root: " + image_root)
 
-    train_loader = get_loader(image_root, gt_root, batchsize=opt.batchsize, trainsize=opt.trainsize, augmentation = opt.augmentation)
+    train_loader = get_loader(image_root, gt_root, batchsize=opt.batchsize, trainsize=opt.trainsize, num_workers=opt.num_workers, augmentation = opt.augmentation)
     total_step = len(train_loader)
 
     print("#"*20, "Start Training", "#"*20)

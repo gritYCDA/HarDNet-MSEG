@@ -102,16 +102,23 @@ class aggregation(nn.Module):
 
 class HarDMSEG(nn.Module):
     # res2net based encoder decoder
-    def __init__(self, channel=32):
+    def __init__(self, channel=32, arch=68):
         super(HarDMSEG, self).__init__()
         # ---- ResNet Backbone ----
         #self.resnet = res2net50_v1b_26w_4s(pretrained=True)
         self.relu = nn.ReLU(True)
+        # ---- backbone ----
+        self.arch = arch
         # ---- Receptive Field Block like module ----
-        
-        self.rfb2_1 = RFB_modified(320, channel)
-        self.rfb3_1 = RFB_modified(640, channel)
-        self.rfb4_1 = RFB_modified(1024, channel)
+        if self.arch is 68:
+            self.rfb2_1 = RFB_modified(320, channel)
+            self.rfb3_1 = RFB_modified(640, channel)
+            self.rfb4_1 = RFB_modified(1024, channel)
+        elif self.arch is 85:
+            self.rfb2_1 = RFB_modified(320, channel)
+            self.rfb3_1 = RFB_modified(720, channel)
+            self.rfb4_1 = RFB_modified(1280, channel)
+
         # ---- Partial Decoder ----
         #self.agg1 = aggregation(channel)
         self.agg1 = aggregation(32)
@@ -137,12 +144,12 @@ class HarDMSEG(nn.Module):
         self.conv5 = BasicConv2d(1024, 1024, 3, padding=1)
         self.conv6 = nn.Conv2d(1024, 1, 1)
         self.upsample = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-        self.hardnet = hardnet(arch=68)
+        self.hardnet = hardnet(arch=self.arch)
         
     def forward(self, x):
         #print("input",x.size())
         
-        hardnetout = self.hardnet(x)
+        hardnetout = self.hardnet(x, arch=self.arch)
         
         x1 = hardnetout[0]
         x2 = hardnetout[1]

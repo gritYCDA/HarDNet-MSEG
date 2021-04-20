@@ -1,0 +1,15 @@
+## ignore files ##
+.DS_Store
+# Training weights
+snapshots
+
+
+# Pretrained Weights
+lib/hardnet39ds.pth
+lib/hardnet68.pth
+lib/hardnet68ds.pth
+lib/hardnet85.pth
+lib/HarDNet-MSEG-best.pth
+
+
+*.pth

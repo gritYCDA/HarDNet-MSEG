@@ -13,7 +13,7 @@ parser.add_argument('--pth_path', type=str, default='HarD-MSEG-best.pth')
 for _data_name in ['CVC-300', 'CVC-ClinicDB', 'Kvasir', 'CVC-ColonDB', 'ETIS-LaribPolypDB']:
     
     ##### put ur data_path here #####
-    data_path = '/work/james128333/PraNet/TestDataset/{}/'.format(_data_name)
+    data_path = '/data1/medical/TestDataset/{}/'.format(_data_name)
     #####                       #####
     
     save_path = './results/HarDMSEG/{}/'.format(_data_name)

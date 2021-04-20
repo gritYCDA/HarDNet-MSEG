@@ -100,6 +100,7 @@ class HarDBlock(nn.Module):
 class HarDNet(nn.Module):
     def __init__(self, depth_wise=False, arch=85, pretrained=True, weight_path=''):
         super().__init__()
+        self.arch = arch
         first_ch  = [32, 64]
         second_kernel = 3
         max_pool = True
@@ -112,7 +113,7 @@ class HarDNet(nn.Module):
         n_layers = [   8, 16, 16, 16,  4]
         downSamp = [   1,  0,  1,  1,  0]
         
-        if arch==85:
+        if self.arch==85:
           #HarDNet85
           first_ch  = [48, 96]
           ch_list = [  192, 256, 320, 480, 720, 1280]
@@ -120,7 +121,7 @@ class HarDNet(nn.Module):
           n_layers = [   8,  16,  16,  16,  16,   4]
           downSamp = [   1,   0,   1,   0,   1,   0]
           drop_rate = 0.2
-        elif arch==39:
+        elif self.arch==39:
           #HarDNet39
           first_ch  = [24, 48]
           ch_list = [  96, 320, 640, 1024]
@@ -178,16 +179,19 @@ class HarDNet(nn.Module):
                 nn.Dropout(drop_rate),
                 nn.Linear(ch, 1000) ))
                 
-    def forward(self, x):
+    def forward(self, x, arch):
         out_branch =[]
         #for layer in self.base:
         #    x = layer(x)
             
         for i in range(len(self.base)-1):
             x = self.base[i](x)
-            if i == 4 or i == 9 or i == 12 or i == 15:
-                out_branch.append(x)
-
+            if self.arch is 68:
+                if i == 4 or i == 9 or i == 12 or i == 15:
+                    out_branch.append(x)
+            elif self.arch is 85:
+                if i == 4 or i == 9 or i == 14 or i == 18:
+                    out_branch.append(x)
         out = x
         
         #for i in range(4):
@@ -195,19 +199,22 @@ class HarDNet(nn.Module):
             
         return out_branch
     
-def hardnet(arch=68,pretrained=True, **kwargs):
-    if arch ==68:
+def hardnet(arch=68, pretrained=True, **kwargs):
+    if arch == 68:
         print("68 LOADED")
-        model = HarDNet(arch=68)
+        model = HarDNet(arch=arch)
         if pretrained:
-            weights = torch.load('/home/james128333/PraNet/lib/hardnet68.pth')
+            weights = torch.load('/data2/HarDNet-MSEG/lib/hardnet68.pth')
             model.load_state_dict(weights)
             print("68 LOADED READY")
-    #elif arch == 85:
-    #    print("85 LOADED")
-    #    model = HarDNet(arch=85)
-    #    if pretrained:
-    #        print("HAAAHAAA")
-    #        weights = torch.load('/home/james128333/HarDNet-MSEG/lib/hardnet85.pth')
-    #        model.load_state_dict(weights)
+    elif arch == 85:
+       print("85 LOADED")
+       model = HarDNet(arch=arch)
+       if pretrained:
+           weights = torch.load('/data2/HarDNet-MSEG/lib/hardnet85.pth')
+           model.load_state_dict(weights)
+           print("85 LOADED READY")
+
+    # TODO: hardnet85ds, hardnet68ds version
+
     return model
